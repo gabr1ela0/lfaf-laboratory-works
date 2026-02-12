@@ -80,6 +80,7 @@ Strings like "ade" and "aae" are accepted because they follow valid derivation p
 ## Conclusions
 <div align="center">
   <img src="resources/image.png" alt="Output results" width="40%">
+  <p>Figure 1 - Output results</p>
 </div>
 
 This laboratory work successfully implemented the core concepts of formal language theory. The Grammar class generates valid strings through random application of production rules, while the FiniteAutomaton class recognizes whether strings belong to the language. The conversion between these two representations preserves the language definition, confirming their theoretical equivalence.
