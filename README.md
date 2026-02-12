@@ -20,12 +20,24 @@ A finite automaton recognizes strings by processing input symbols through state 
     b. Add one function that would generate 5 valid strings from the language expressed by your given grammar; <br>
     c. Implement some functionality that would convert an object of type Grammar to one of type Finite Automaton; <br>
     d. For the Finite Automaton, please add a method that checks if an input string can be obtained via the state transition from it.
-
+## Variant 8:
+```VN={S, D, E, J},
+    VT={a, b, c, d, e},
+    P={
+    S → aD
+    D → dE
+    D → bJ
+    J → cS
+    E → e
+    E → aE
+    D → aE
+    }
+```
 ## Implementation description
 
 The Grammar class stores the grammar components: non-terminals {S, D, E, J}, terminals {a, b, c, d, e}, start symbol "S", and production rules in a HashMap for efficient access.
 
-```
+```java
 public Grammar() {
     nonTerminals = new HashSet<>(Arrays.asList("S", "D", "E", "J"));
     terminals = new HashSet<>(Arrays.asList("a", "b", "c", "d", "e"));
@@ -38,7 +50,7 @@ public Grammar() {
 }
 ```
 The generateString() method starts from the start symbol and randomly selects production rules, appending terminals and following non-terminals until derivation completes.
-```
+```java
 public String generateString() {
     String current = startSymbol;
     StringBuilder result = new StringBuilder();
@@ -57,7 +69,7 @@ public String generateString() {
 ```
 The conversion maps each nonterminal to a state and creates transitions according to production rules. Productions ending with non-terminals transition to that state; terminal-only productions go to a final state "F".
 
-```
+```java
 public FiniteAutomaton toFiniteAutomaton() {
     Set<String> states = new HashSet<>(nonTerminals);
     states.add("F");
@@ -80,6 +92,7 @@ Strings like "ade" and "aae" are accepted because they follow valid derivation p
 ## Conclusions
 <div align="center">
   <img src="resources/image.png" alt="Output results" width="40%">
+  <p>Figure 1 - Output results</p>
 </div>
 
 This laboratory work successfully implemented the core concepts of formal language theory. The Grammar class generates valid strings through random application of production rules, while the FiniteAutomaton class recognizes whether strings belong to the language. The conversion between these two representations preserves the language definition, confirming their theoretical equivalence.

@@ -45,7 +45,7 @@ class Grammar {
     // Convert grammar to finite automaton
     public FiniteAutomaton toFiniteAutomaton() {
         Set<String> states = new HashSet<>(nonTerminals);
-        String finalState = "F";
+        String finalState = "FINAL";
         states.add(finalState);
 
         Map<String, Map<String, Set<String>>> transitions = new HashMap<>();
