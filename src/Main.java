@@ -9,7 +9,7 @@ public class Main {
 
         FiniteAutomaton fa = grammar.toFiniteAutomaton();
 
-        System.out.println("\nTesting finite automaton");
+        System.out.println("\nCheck if a string belongs to the language");
         String[] testWords = {"ase", "ade", "aaaaaaae", "miau", "aae", "aaaca"};
 
         for (String w : testWords) {
