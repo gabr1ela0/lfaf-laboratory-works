@@ -13,13 +13,13 @@ A finite automaton recognizes strings by processing input symbols through state 
 
 ## Objectives:
 
-* 1. Discover what a language is and what it needs to have to be considered a formal one;
-* 2. Provide the initial setup for the evolving project; 
-* 3. According to the variant number, get the grammar definition and do the following:
-    a. Implement a type/class for your grammar;
-    b. Add one function that would generate 5 valid strings from the language expressed by your given grammar;
-    c. Implement some functionality that would convert an object of type Grammar to one of type Finite Automaton;
-    d. For the Finite Automaton, please add a method that checks if an input string can be obtained via the state transition from it;
+* Discover what a language is and what it needs to have to be considered a formal one;
+* Provide the initial setup for the evolving project; 
+* According to the variant number, get the grammar definition and do the following <br>
+    a. Implement a type/class for your grammar; <br>
+    b. Add one function that would generate 5 valid strings from the language expressed by your given grammar; <br>
+    c. Implement some functionality that would convert an object of type Grammar to one of type Finite Automaton; <br>
+    d. For the Finite Automaton, please add a method that checks if an input string can be obtained via the state transition from it.
 
 ## Implementation description
 
@@ -55,7 +55,7 @@ public String generateString() {
     return result.toString();
 }
 ```
-The conversion maps each non-terminal to a state and creates transitions based on production rules. Productions ending with non-terminals transition to that state; terminal-only productions go to a final state "F".
+The conversion maps each nonterminal to a state and creates transitions according to production rules. Productions ending with non-terminals transition to that state; terminal-only productions go to a final state "F".
 
 ```
 public FiniteAutomaton toFiniteAutomaton() {
@@ -77,7 +77,9 @@ public FiniteAutomaton toFiniteAutomaton() {
 
 The automaton tracks all possible current states, processes each input character by computing reachable next states, and accepts if any final state is reached.
 Strings like "ade" and "aae" are accepted because they follow valid derivation paths (S -> aD -> ade, S -> aD -> aE -> aae), while invalid strings are correctly rejected. The grammar-to-automaton conversion preserves the language definition, confirming the equivalence between the two representations.
-## Conclusions / Screenshots / Results
-![Alt text](image.png "output reuslts")
+## Conclusions
+<div align="center">
+  <img src="resources/image.png" alt="Output results" width="40%">
+</div>
 
-## References
+This laboratory work successfully implemented the core concepts of formal language theory. The Grammar class generates valid strings through random application of production rules, while the FiniteAutomaton class recognizes whether strings belong to the language. The conversion between these two representations preserves the language definition, confirming their theoretical equivalence.
