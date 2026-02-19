@@ -10,7 +10,7 @@ public class Main {
         FiniteAutomaton fa = grammar.toFiniteAutomaton();
 
         System.out.println("\nCheck if a string belongs to the language");
-        String[] testWords = {"ase", "ade", "aaaaaaae", "miau", "aae", "aaaca"};
+        String[] testWords = {"ase", "ade", "aaaaaaae", "miau", "aae", "aaaca", "wealth", "fame", "power"};
 
         for (String w : testWords) {
             System.out.println(w + " -> " + fa.stringBelongsToLanguage(w));

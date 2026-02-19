@@ -35,8 +35,7 @@ A finite automaton recognizes strings by processing input symbols through state 
 ```
 ## Implementation description
 
-The Grammar class stores the grammar components: non-terminals {S, D, E, J}, terminals {a, b, c, d, e}, start symbol "S", and production rules in a HashMap for efficient access.
-
+The Grammar class stores all the components of my grammar: the non-terminals {S, D, E, J}, the terminals {a, b, c, d, e}, the start symbol "S", and the production rules. I used a HashMap to store the productions so that each non-terminal can quickly access its list of rules. This makes the structure clean and easy to manage.
 ```java
 public Grammar() {
     nonTerminals = new HashSet<>(Arrays.asList("S", "D", "E", "J"));
@@ -49,7 +48,9 @@ public Grammar() {
     productions.put("E", Arrays.asList("e", "aE"));
 }
 ```
-The generateString() method starts from the start symbol and randomly selects production rules, appending terminals and following non-terminals until derivation completes.
+The generateString() method starts from the start symbol S and randomly chooses production rules. Each time, it adds the terminal symbol to the result and continues with the next non-terminal (if there is one). It keeps going until it reaches a rule that contains only a terminal.
+
+At first, I was worried about infinite loops because of the rule E -> aE, but since there is also E -> e, the derivation eventually stops. So the generation works correctly and produces valid strings from the language.
 ```java
 public String generateString() {
     String current = startSymbol;
@@ -67,8 +68,11 @@ public String generateString() {
     return result.toString();
 }
 ```
-The conversion maps each nonterminal to a state and creates transitions according to production rules. Productions ending with non-terminals transition to that state; terminal-only productions go to a final state "F".
+For the conversion to a Finite Automaton, I followed the standard algorithm for right-linear grammars. Each non-terminal becomes a state. If a production is of the form A -> aB, I create a transition from state A to state B with symbol a.
 
+If a production is of the form A -> a, that means the word ends there, so I created a new final state "F" and added a transition to it. This makes the automaton accept the string correctly.
+
+Everything worked as expected after carefully building the transition structure. The only thing I had to pay attention to was correctly initializing the transitions map before adding transitions, otherwise it could cause errors.
 ```java
 public FiniteAutomaton toFiniteAutomaton() {
     Set<String> states = new HashSet<>(nonTerminals);
