@@ -45,8 +45,8 @@ class Grammar {
             }
         }
 
-        if (isRegular) return "Type 3 (Regular Grammar)";
-        return "Cannot determine precisely (but not regular)";
+        if (isRegular) return "Regular Grammar";
+        return "Cannot determine precisely";
     }
 
     public void printProductions() {
