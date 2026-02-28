@@ -34,7 +34,7 @@ A finite automaton recognizes strings by processing input symbols through state 
     }
 ```
 ## Implementation description
-
+§
 The Grammar class stores all the components of my grammar: the non-terminals {S, D, E, J}, the terminals {a, b, c, d, e}, the start symbol "S", and the production rules. I used a HashMap to store the productions so that each non-terminal can quickly access its list of rules. This makes the structure clean and easy to manage.
 ```java
 public Grammar() {
