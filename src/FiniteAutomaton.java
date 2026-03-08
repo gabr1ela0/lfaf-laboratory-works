@@ -1,3 +1,4 @@
+// FiniteAutomaton.java
 import java.util.*;
 
 class FiniteAutomaton {
@@ -21,43 +22,28 @@ class FiniteAutomaton {
         this.finalStates = finalStates;
     }
 
-    // Check if automaton is deterministic
     public boolean isDeterministic() {
-
         for (String state : transitions.keySet()) {
             for (String symbol : transitions.get(state).keySet()) {
-
-                // More than one transition = NDFA
-                if (transitions.get(state).get(symbol).size() > 1) {
-                    return false;
-                }
+                if (transitions.get(state).get(symbol).size() > 1) return false;
             }
         }
         return true;
     }
 
-    // Check if string belongs to language
     public boolean stringBelongsToLanguage(String input) {
-
         Set<String> currentStates = new HashSet<>();
         currentStates.add(startState);
 
         for (char ch : input.toCharArray()) {
-
             Set<String> nextStates = new HashSet<>();
-
             for (String state : currentStates) {
-
                 if (transitions.containsKey(state) &&
                         transitions.get(state).containsKey(String.valueOf(ch))) {
-
-                    nextStates.addAll(
-                            transitions.get(state).get(String.valueOf(ch)));
+                    nextStates.addAll(transitions.get(state).get(String.valueOf(ch)));
                 }
             }
-
             currentStates = nextStates;
-
             if (currentStates.isEmpty()) return false;
         }
 
@@ -68,73 +54,71 @@ class FiniteAutomaton {
         return false;
     }
 
-    // Convert NDFA to DFA (subset construction)
+    // NDFA -> DFA subset construction
     public FiniteAutomaton convertToDFA() {
 
-        Set<String> newStates = new HashSet<>();
-        Map<String, Map<String, Set<String>>> newTransitions = new HashMap<>();
+        Set<String> newStates = new LinkedHashSet<>();
+        Map<String, Map<String, Set<String>>> newTransitions = new LinkedHashMap<>();
         Queue<Set<String>> queue = new LinkedList<>();
+        Map<Set<String>, String> nameMap = new HashMap<>();
 
         Set<String> startSet = new HashSet<>();
         startSet.add(startState);
 
+        String startName = setToName(startSet);
         queue.add(startSet);
-        newStates.add(startSet.toString());
+        newStates.add(startName);
+        nameMap.put(startSet, startName);
+
+        Set<String> newFinalStates = new HashSet<>();
+        if (containsFinal(startSet)) newFinalStates.add(startName);
 
         while (!queue.isEmpty()) {
 
             Set<String> currentSet = queue.poll();
-            String currentName = currentSet.toString();
+            String currentName = nameMap.get(currentSet);
 
             for (String symbol : alphabet) {
 
                 Set<String> nextSet = new HashSet<>();
-
                 for (String state : currentSet) {
-
                     if (transitions.containsKey(state) &&
                             transitions.get(state).containsKey(symbol)) {
-
                         nextSet.addAll(transitions.get(state).get(symbol));
                     }
                 }
 
-                if (!nextSet.isEmpty()) {
+                if (nextSet.isEmpty()) continue;
 
-                    String nextName = nextSet.toString();
+                String nextName = setToName(nextSet);
+                nameMap.putIfAbsent(nextSet, nextName);
 
-                    newTransitions.putIfAbsent(currentName, new HashMap<>());
-                    newTransitions.get(currentName)
-                            .put(symbol, Set.of(nextName));
+                newTransitions.putIfAbsent(currentName, new HashMap<>());
+                newTransitions.get(currentName).put(symbol, Set.of(nextName));
 
-                    if (!newStates.contains(nextName)) {
-                        newStates.add(nextName);
-                        queue.add(nextSet);
-                    }
+                if (!newStates.contains(nextName)) {
+                    newStates.add(nextName);
+                    queue.add(nextSet);
+
+                    if (containsFinal(nextSet)) newFinalStates.add(nextName);
                 }
             }
         }
 
-        // Determine new final states
-        Set<String> newFinalStates = new HashSet<>();
-
-        for (String state : newStates) {
-            for (String finalState : finalStates) {
-                if (state.contains(finalState)) {
-                    newFinalStates.add(state);
-                }
-            }
-        }
-
-        return new FiniteAutomaton(
-                newStates,
-                alphabet,
-                newTransitions,
-                startSet.toString(),
-                newFinalStates);
+        return new FiniteAutomaton(newStates, alphabet, newTransitions, startName, newFinalStates);
     }
 
-    // Convert FA to right-linear grammar
+    private boolean containsFinal(Set<String> set) {
+        for (String s : set) if (finalStates.contains(s)) return true;
+        return false;
+    }
+
+    private String setToName(Set<String> set) {
+        List<String> list = new ArrayList<>(set);
+        Collections.sort(list); // optional alphabetical sort
+        return String.join("", list);
+    }
+
     public Grammar toRegularGrammar() {
 
         Map<String, List<String>> productions = new HashMap<>();
@@ -147,10 +131,8 @@ class FiniteAutomaton {
 
                     productions.putIfAbsent(state, new ArrayList<>());
 
-                    productions.get(state)
-                            .add(symbol + next);
+                    productions.get(state).add(symbol + next);
 
-                    // If next is final -> add terminal-only rule
                     if (finalStates.contains(next)) {
                         productions.get(state).add(symbol);
                     }

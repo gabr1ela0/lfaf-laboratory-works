@@ -1,3 +1,4 @@
+// Grammar.java
 import java.util.*;
 
 class Grammar {
@@ -18,27 +19,21 @@ class Grammar {
         this.productions = productions;
     }
 
-    // Classify grammar according to Chomsky hierarchy
     public String classifyGrammar() {
-
         boolean isRegular = true;
 
         for (String left : productions.keySet()) {
 
-            // Left side must be single non-terminal
-            if (!nonTerminals.contains(left) || left.length() != 1) {
+            if (!nonTerminals.contains(left) || left.length() < 1) {
                 isRegular = false;
                 break;
             }
 
             for (String right : productions.get(left)) {
-
-                // Regular grammar: a OR aB
                 if (!(right.length() == 1 ||
-                        (right.length() == 2 &&
+                        (right.length() > 1 &&
                                 nonTerminals.contains(
                                         String.valueOf(right.charAt(1)))))) {
-
                     isRegular = false;
                     break;
                 }
@@ -50,12 +45,16 @@ class Grammar {
     }
 
     public void printProductions() {
-
         System.out.println("\nRegular Grammar Productions:");
 
-        for (String left : productions.keySet()) {
-            System.out.println(left + " -> " +
-                    String.join(" | ", productions.get(left)));
+        List<String> sortedLefts = new ArrayList<>(productions.keySet());
+        Collections.sort(sortedLefts);
+
+        for (String left : sortedLefts) {
+            List<String> rhs = new ArrayList<>(productions.get(left));
+            Collections.sort(rhs);
+
+            System.out.println(left + " -> [" + String.join(", ", rhs) + "]");
         }
 
         System.out.println("Classification: " + classifyGrammar());

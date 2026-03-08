@@ -1,9 +1,9 @@
+// Main.java
 import java.util.*;
 
 public class Main {
 
     public static void main(String[] args) {
-
 
         Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4");
         Set<String> alphabet = Set.of("a", "b");
@@ -24,6 +24,7 @@ public class Main {
         addTransition(transitions, "q3", "a", "q4");
         addTransition(transitions, "q4", "a", "q0");
 
+        // Create FA
         FiniteAutomaton fa =
                 new FiniteAutomaton(states, alphabet, transitions, startState, finalStates);
 
@@ -35,7 +36,7 @@ public class Main {
         System.out.println("Converted to DFA.");
         System.out.println("Is deterministic: " + dfa.isDeterministic());
 
-        // a) Convert FA to Regular Grammar
+        // a) Convert FA to Regular Grammar (use original NDFA)
         Grammar grammar = fa.toRegularGrammar();
         grammar.printProductions();
 
@@ -43,7 +44,6 @@ public class Main {
         System.out.println("Test word 'aba': " + dfa.stringBelongsToLanguage("aba"));
     }
 
-    //method to simplify adding transitions
     private static void addTransition(
             Map<String, Map<String, Set<String>>> transitions,
             String from, String symbol, String to) {
