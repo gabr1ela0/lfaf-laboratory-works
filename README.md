@@ -63,7 +63,59 @@ I used subset construction, where each DFA state represents a set of NDFA states
 
 The tricky part was identifying final states in the DFA. Since state sets get serialized as strings like `[q1, q2]`, I used `.contains()` to check if any original final state appears in that string.
 ```java
+ // NDFA -> DFA subset construction
+    public FiniteAutomaton convertToDFA() {
 
+        Set<String> newStates = new LinkedHashSet<>();
+        Map<String, Map<String, Set<String>>> newTransitions = new LinkedHashMap<>();
+        Queue<Set<String>> queue = new LinkedList<>();
+        Map<Set<String>, String> nameMap = new HashMap<>();
+
+        Set<String> startSet = new HashSet<>();
+        startSet.add(startState);
+
+        String startName = setToName(startSet);
+        queue.add(startSet);
+        newStates.add(startName);
+        nameMap.put(startSet, startName);
+
+        Set<String> newFinalStates = new HashSet<>();
+        if (containsFinal(startSet)) newFinalStates.add(startName);
+
+        while (!queue.isEmpty()) {
+
+            Set<String> currentSet = queue.poll();
+            String currentName = nameMap.get(currentSet);
+
+            for (String symbol : alphabet) {
+
+                Set<String> nextSet = new HashSet<>();
+                for (String state : currentSet) {
+                    if (transitions.containsKey(state) &&
+                            transitions.get(state).containsKey(symbol)) {
+                        nextSet.addAll(transitions.get(state).get(symbol));
+                    }
+                }
+
+                if (nextSet.isEmpty()) continue;
+
+                String nextName = setToName(nextSet);
+                nameMap.putIfAbsent(nextSet, nextName);
+
+                newTransitions.putIfAbsent(currentName, new HashMap<>());
+                newTransitions.get(currentName).put(symbol, Set.of(nextName));
+
+                if (!newStates.contains(nextName)) {
+                    newStates.add(nextName);
+                    queue.add(nextSet);
+
+                    if (containsFinal(nextSet)) newFinalStates.add(nextName);
+                }
+            }
+        }
+
+        return new FiniteAutomaton(newStates, alphabet, newTransitions, startName, newFinalStates);
+    }
 ```
 
 ### Automaton to Regular Grammar
