@@ -3,204 +3,273 @@
 ### Course: Formal Languages & Finite Automata
 ### Author: Gabriela Bîtca FAF-242
 
+---
 
 ## Theory
 
-A finite automaton is a mathematical model that recognizes patterns in strings by moving between states based on transition rules. If the automaton ends in a final state after reading the full input, the string is accepted. There are two types: DFA (one transition per state/symbol) and NDFA (multiple possible transitions). Both recognize regular languages, and every NDFA can be converted to an equivalent DFA using subset construction.
+A finite automaton is a simple machine that reads a string character by character and decides whether to accept or reject it based on rules called transitions. It moves between states as it reads input, and if it ends up in a "final" state, the string is accepted.
 
+There are two kinds: a **DFA** (Deterministic Finite Automaton), where each state has exactly one possible next state for each input symbol, and an **NDFA** (Non-Deterministic Finite Automaton), where a state can branch into multiple next states at once. Both recognize the same class of languages (regular languages), and any NDFA can be converted into an equivalent DFA using an algorithm called **subset construction**.
+
+---
 
 ## Objectives
 
-* Implement a grammar classifier based on the Chomsky hierarchy.
-* Define the finite automaton from Variant 8 and determine if it's deterministic.
-* Convert the NDFA to a DFA using subset construction.
-* Convert the finite automaton into a regular grammar.
+- Implement a grammar classifier based on the Chomsky hierarchy.
+- Define the finite automaton from Variant 8 and determine if it's deterministic.
+- Convert the NDFA to a DFA using subset construction.
+- Convert the finite automaton into a regular grammar.
 
+---
 
-## Implementation Description
+## Variant 8
 
-### Setting Up the Automaton
-
-In `Main.java`, I defined the automaton from Variant 8 by building the transition map manually. To make it simpler, I wrote a method `addTransition()` so I didn't have to repeat that boilerplate everywhere. The NDFA case is clear here: `q1` on input `b` can go to both `q1` and `q2`.
-```java
-        Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4");
-Set<String> alphabet = Set.of("a", "b");
-Set<String> finalStates = Set.of("q3");
-String startState = "q0";
-
-//state -> symbol -> set of next states
-Map<String, Map<String, Set<String>>> transitions = new HashMap<>();
-
-addTransition(transitions, "q0", "a", "q1");
-
-addTransition(transitions, "q1", "b", "q2");
-addTransition(transitions, "q1", "b", "q1"); // NDFA case
-
-addTransition(transitions, "q2", "b", "q0");
-addTransition(transitions, "q2", "a", "q3");
-
-addTransition(transitions, "q3", "a", "q4");
-addTransition(transitions, "q4", "a", "q0");
 ```
-In the initial version, I forgot to concatenate terminal-only rules properly in the grammar. My initial output included merged DFA state names like q1q2 and q1q2q0, which was confusing. The fix was to generate the regular grammar from the original NDFA states, keeping each state separate and adding explicit terminal rules when a transition leads to a final state.
-### Checking Determinism
+Q = {q0, q1, q2, q3, q4}
+∑ = {a, b}
+F = {q3}
+δ(q0, a) = q1
+δ(q1, b) = q2
+δ(q1, b) = q1     ← same state, same symbol, two destinations: this is what makes it an NDFA
+δ(q2, b) = q0
+δ(q2, a) = q3
+δ(q3, a) = q4
+δ(q4, a) = q0
+```
 
-The logic here is simple: for every state and symbol pair, if the set of next states has more than one element, the automaton is non-deterministic. What caught me off guard initially was that I wasn't checking `.size()` properly I was just checking whether a transition existed, not how many destinations it had. Once that was fixed, it correctly identified Variant 8 as an NDFA.
+---
+
+## Implementation
+
+### Setting Up the Automaton (`Main.java`)
+
+I built the automaton manually by adding states, alphabet symbols, and transitions one by one. The `addTransition()` helper method keeps it clean. The non-determinism is right here: `q1` on input `b` can go to both `q1` and `q2`.
+
 ```java
-    public boolean isDeterministic() {
+FiniteAutomaton fa = new FiniteAutomaton();
+
+fa.states.add("q0");
+fa.states.add("q1");
+fa.states.add("q2");
+fa.states.add("q3");
+fa.states.add("q4");
+
+fa.alphabet.add('a');
+fa.alphabet.add('b');
+
+fa.startState = "q0";
+fa.finalStates.add("q3");
+
+fa.addTransition("q0", 'a', "q1");
+fa.addTransition("q1", 'b', "q2");
+fa.addTransition("q1", 'b', "q1");  // non-deterministic transition
+fa.addTransition("q2", 'b', "q0");
+fa.addTransition("q2", 'a', "q3");
+fa.addTransition("q3", 'a', "q4");
+fa.addTransition("q4", 'a', "q0");
+```
+
+---
+
+### Checking Determinism (`FiniteAutomaton.java`)
+
+The idea is simple: if any state has more than one destination for the same input symbol, it's non-deterministic. The check just loops through transitions and looks at the size of each destination set.
+
+```java
+public boolean isDeterministic() {
     for (String state : transitions.keySet()) {
-        for (String symbol : transitions.get(state).keySet()) {
-            if (transitions.get(state).get(symbol).size() > 1) return false;
+        for (char symbol : transitions.get(state).keySet()) {
+            if (transitions.get(state).get(symbol).size() > 1)
+                return false;
         }
     }
     return true;
 }
 ```
 
-### NDFA to DFA Conversion
+This correctly returns `false` for Variant 8 because `q1` on `b` has two destinations.
 
-I used subset construction, where each DFA state represents a set of NDFA states. A queue drives the process  I start with the initial state, then for each symbol compute all reachable states and create a new DFA state from that set. This continues until no new state sets are discovered.
+---
 
-The tricky part was identifying final states in the DFA. Since state sets get serialized as strings like `[q1, q2]`, I used `.contains()` to check if any original final state appears in that string.
+### NDFA to DFA Conversion (`FiniteAutomaton.java`)
+
+This uses **subset construction**: each DFA state represents a *set* of NDFA states that could be active at the same time. I start with just `{q0}`, then for each symbol, I collect all states reachable from the current set and treat that as a new DFA state. This repeats until no new sets are found.
+
+A DFA state is marked as final if it contains any of the original NDFA final states.
+
 ```java
- // NDFA -> DFA subset construction
-    public FiniteAutomaton convertToDFA() {
+public FiniteAutomaton convertToDFA() {
+    FiniteAutomaton dfa = new FiniteAutomaton();
+    dfa.alphabet = this.alphabet;
 
-        Set<String> newStates = new LinkedHashSet<>();
-        Map<String, Map<String, Set<String>>> newTransitions = new LinkedHashMap<>();
-        Queue<Set<String>> queue = new LinkedList<>();
-        Map<Set<String>, String> nameMap = new HashMap<>();
+    Map<Set<String>, String> nameMap = new HashMap<>();
+    Queue<Set<String>> queue = new LinkedList<>();
 
-        Set<String> startSet = new HashSet<>();
-        startSet.add(startState);
+    Set<String> startSet = new HashSet<>();
+    startSet.add(startState);
 
-        String startName = setToName(startSet);
-        queue.add(startSet);
-        newStates.add(startName);
-        nameMap.put(startSet, startName);
+    nameMap.put(startSet, setToString(startSet));
+    dfa.startState = setToString(startSet);
+    dfa.states.add(setToString(startSet));
+    queue.add(startSet);
 
-        Set<String> newFinalStates = new HashSet<>();
-        if (containsFinal(startSet)) newFinalStates.add(startName);
+    if (containsFinal(startSet))
+        dfa.finalStates.add(setToString(startSet));
 
-        while (!queue.isEmpty()) {
+    while (!queue.isEmpty()) {
+        Set<String> current = queue.poll();
+        String currentName = nameMap.get(current);
 
-            Set<String> currentSet = queue.poll();
-            String currentName = nameMap.get(currentSet);
+        for (char symbol : alphabet) {
+            Set<String> nextSet = new HashSet<>();
 
-            for (String symbol : alphabet) {
-
-                Set<String> nextSet = new HashSet<>();
-                for (String state : currentSet) {
-                    if (transitions.containsKey(state) &&
-                            transitions.get(state).containsKey(symbol)) {
-                        nextSet.addAll(transitions.get(state).get(symbol));
-                    }
-                }
-
-                if (nextSet.isEmpty()) continue;
-
-                String nextName = setToName(nextSet);
-                nameMap.putIfAbsent(nextSet, nextName);
-
-                newTransitions.putIfAbsent(currentName, new HashMap<>());
-                newTransitions.get(currentName).put(symbol, Set.of(nextName));
-
-                if (!newStates.contains(nextName)) {
-                    newStates.add(nextName);
-                    queue.add(nextSet);
-
-                    if (containsFinal(nextSet)) newFinalStates.add(nextName);
+            for (String state : current) {
+                if (transitions.containsKey(state) &&
+                        transitions.get(state).containsKey(symbol)) {
+                    nextSet.addAll(transitions.get(state).get(symbol));
                 }
             }
-        }
 
-        return new FiniteAutomaton(newStates, alphabet, newTransitions, startName, newFinalStates);
+            if (nextSet.isEmpty()) continue;
+
+            nameMap.putIfAbsent(nextSet, setToString(nextSet));
+            String nextName = nameMap.get(nextSet);
+
+            if (!dfa.states.contains(nextName)) {
+                dfa.states.add(nextName);
+                queue.add(nextSet);
+
+                if (containsFinal(nextSet))
+                    dfa.finalStates.add(nextName);
+            }
+
+            dfa.addTransition(currentName, symbol, nextName);
+        }
     }
+
+    return dfa;
+}
 ```
 
-### Automaton to Regular Grammar
+---
 
-Each transition `qi --a--> qj` maps directly to a production `qi -> a qj`. If `qj` is a final state, I also add `qi -> a` so the string can terminate there. The early mistake I made was forgetting that second rule entirely the grammar was generating productions but strings that ended in a final state were never being accepted. Adding the terminal-only rule fixed it.
+### Automaton to Regular Grammar (`FiniteAutomaton.java`)
+
+Every transition `qi --a--> qj` becomes a production `qi -> aqj`. If `qj` is a final state, I also add `qi -> a` — this lets the grammar "stop" there and accept the string.
+
 ```java
-    public Grammar toRegularGrammar() {
-
-    Map<String, List<String>> productions = new HashMap<>();
+public Grammar toRegularGrammar() {
+    Grammar grammar = new Grammar();
 
     for (String state : transitions.keySet()) {
-
-        for (String symbol : transitions.get(state).keySet()) {
-
+        for (char symbol : transitions.get(state).keySet()) {
             for (String next : transitions.get(state).get(symbol)) {
+                grammar.addProduction(state, symbol + next);
 
-                productions.putIfAbsent(state, new ArrayList<>());
-
-                productions.get(state).add(symbol + next);
-
-                if (finalStates.contains(next)) {
-                    productions.get(state).add(symbol);
-                }
+                if (finalStates.contains(next))
+                    grammar.addProduction(state, String.valueOf(symbol));
             }
         }
     }
 
-    return new Grammar(states, alphabet, startState, productions);
+    return grammar;
 }
 ```
 
-### Grammar Classification
+---
 
-The classifier checks whether all productions follow the form `A -> a` or `A -> aB`, which defines a Type 3 regular grammar. The issue I ran into was assuming non-terminals are always single characters. Since states are named `q0`, `q1` that check was causing everything to fail. I removed the `left.length() != 1` restriction and checked set membership instead, which resolved it.
+### Grammar Classification (`Grammar.java`)
+
+This method figures out which Chomsky type the grammar is. The key fix from the original version: state names like `q0`, `q1` are multi-character, so the old single-character check `^[A-Z]$` was failing and everything was falling through to Type 0.
+
+The updated version uses patterns that accept any alphanumeric non-terminal name:
+
+- **Type 3 (Regular):** every production looks like `A -> aB` or `A -> a` (one terminal, optionally followed by one non-terminal)
+- **Type 2 (Context-Free):** LHS is a single non-terminal (any length)
+- **Type 1 (Context-Sensitive):** RHS is at least as long as LHS
+- **Type 0:** everything else
 
 ```java
-    public String classifyGrammar() {
-    boolean isRegular = true;
+public void classifyGrammar() {
+    boolean isType3 = true;
+    boolean isType2 = true;
+    boolean isType1 = true;
 
-    for (String left : productions.keySet()) {
+    // Right-linear: terminal optionally followed by a non-terminal, e.g. "a", "aq1", "bq0"
+    Pattern rightLinear = Pattern.compile("^[a-z]([a-zA-Z][a-zA-Z0-9]*)?$");
 
-        if (!nonTerminals.contains(left) || left.length() < 1) {
-            isRegular = false;
-            break;
+    // Left-linear: terminal optionally preceded by a non-terminal, e.g. "a", "q1a"
+    Pattern leftLinear = Pattern.compile("^([a-zA-Z][a-zA-Z0-9]*)?[a-z]$");
+
+    for (Map.Entry<String, List<String>> entry : productions.entrySet()) {
+        String lhs = entry.getKey();
+        List<String> rhs = entry.getValue();
+
+        // LHS must be a single non-terminal (letters/digits, starting with a letter)
+        if (!lhs.matches("^[a-zA-Z][a-zA-Z0-9]*$")) {
+            isType2 = false;
+            isType3 = false;
         }
 
-        for (String right : productions.get(left)) {
-            if (!(right.length() == 1 ||
-                    (right.length() > 1 &&
-                            nonTerminals.contains(
-                                    String.valueOf(right.charAt(1)))))) {
-                isRegular = false;
-                break;
+        for (String production : rhs) {
+
+            // Type 1: RHS must be at least as long as LHS
+            if (!production.equals("ε") && production.length() < lhs.length()) {
+                isType1 = false;
+            }
+
+            // Type 3: must be right-linear or left-linear
+            if (!production.equals("ε") &&
+                !rightLinear.matcher(production).matches() &&
+                !leftLinear.matcher(production).matches()) {
+                isType3 = false;
             }
         }
     }
 
-    if (isRegular) return "Regular Grammar";
-    return "Cannot determine precisely";
+    if (isType3 && isType2) {
+        System.out.println("\nGrammar Type: Type 3 (Regular Grammar)");
+    } else if (isType2) {
+        System.out.println("\nGrammar Type: Type 2 (Context-Free Grammar)");
+    } else if (isType1) {
+        System.out.println("\nGrammar Type: Type 1 (Context-Sensitive Grammar)");
+    } else {
+        System.out.println("\nGrammar Type: Type 0 (Unrestricted Grammar)");
+    }
 }
 ```
 
+---
 
-## Results
-```
-Is deterministic: false
-Converted to DFA.
-Is deterministic: true
-
-Regular Grammar Productions:
-q0 -> [aq1]
-q1 -> [bq1, bq2]
-q2 -> [a, aq3, bq0]
-q3 -> [aq4]
-q4 -> [aq0]
-Classification: Cannot determine precisely
-Test word 'aba': true
+## Output
 
 ```
+Deterministic: false
 
-The automaton was correctly identified as non-deterministic. After conversion, the DFA confirmed as deterministic. The grammar productions match the expected right-linear structure, and the test word `"aba"` was accepted.
+NDFA -> DFA conversion:
+{q1,q3} -> a {q4}
+{q1,q3} -> b {q1,q2}
+{q1,q2} -> a {q3}
+{q1,q2} -> b {q0,q1,q2}
+{q0,q1,q2} -> a {q1,q3}
+{q0,q1,q2} -> b {q0,q1,q2}
+{q4} -> a {q0}
+{q3} -> a {q4}
+{q0} -> a {q1}
+{q1} -> b {q1,q2}
 
+Regular Grammar:
+q0 -> aq1
+q1 -> bq1 , bq2
+q2 -> aq3 , a , bq0
+q3 -> aq4
+q4 -> aq0
+
+Grammar Type: Type 3 (Regular Grammar)
+```
+
+---
 
 ## Conclusions
 
-Variant 8 was correctly identified as an NDFA due to the duplicate transition on `δ(q1,b)`. The subset construction algorithm successfully produced an equivalent DFA. The automaton was then converted into a right-linear regular grammar. The classifier returned `"Cannot determine precisely"` due to multi-character state names, the grammar is structurally regular, but the classifier's single-character assumption doesn't hold for state-named non-terminals. This is something to improve in future iterations.
-
-
+The automaton from Variant 8 is correctly identified as an NDFA because `q1` transitions to both `q1` and `q2` on input `b`. The subset construction algorithm converts it into an equivalent DFA where each state is a set of original NDFA states. The grammar produced from the automaton is right-linear and correctly classified as Type 3 after fixing the classifier to handle multi-character state names like `q0`, `q1` instead of assuming single uppercase letters.

@@ -1,62 +1,77 @@
-// Grammar.java
 import java.util.*;
+import java.util.regex.*;
 
-class Grammar {
+public class Grammar {
 
-    private Set<String> nonTerminals;
-    private Set<String> terminals;
-    private String startSymbol;
-    private Map<String, List<String>> productions;
+    private Map<String, List<String>> productions = new HashMap<>();
 
-    public Grammar(Set<String> nonTerminals,
-                   Set<String> terminals,
-                   String startSymbol,
-                   Map<String, List<String>> productions) {
-
-        this.nonTerminals = nonTerminals;
-        this.terminals = terminals;
-        this.startSymbol = startSymbol;
-        this.productions = productions;
+    public void addProduction(String left, String right) {
+        productions.putIfAbsent(left, new ArrayList<>());
+        productions.get(left).add(right);
     }
 
-    public String classifyGrammar() {
-        boolean isRegular = true;
+    public void printGrammar() {
+        System.out.println("\nRegular Grammar:");
+        for (String nonTerminal : productions.keySet()) {
+            System.out.print(nonTerminal + " -> ");
+            List<String> rules = productions.get(nonTerminal);
+            for (int i = 0; i < rules.size(); i++) {
+                System.out.print(rules.get(i));
+                if (i < rules.size() - 1)
+                    System.out.print(" , ");
+            }
+            System.out.println();
+        }
+    }
 
-        for (String left : productions.keySet()) {
+    public void classifyGrammar() {
+        boolean isType3 = true;
+        boolean isType2 = true;
+        boolean isType1 = true;
 
-            if (!nonTerminals.contains(left) || left.length() < 1) {
-                isRegular = false;
-                break;
+        // Right-linear: one terminal optionally followed by a non-terminal (any length)
+        // e.g. "a", "aq1", "bq0"
+        Pattern rightLinear = Pattern.compile("^[a-z]([a-zA-Z][a-zA-Z0-9]*)?$");
+
+        // Left-linear: one terminal optionally preceded by a non-terminal (any length)
+        // e.g. "a", "q1a", "q0b"
+        Pattern leftLinear = Pattern.compile("^([a-zA-Z][a-zA-Z0-9]*)?[a-z]$");
+
+        for (Map.Entry<String, List<String>> entry : productions.entrySet()) {
+            String lhs = entry.getKey();
+            List<String> rhs = entry.getValue();
+
+            // Type 2 check: LHS must be a single non-terminal (any length is fine)
+            // but it must contain ONLY non-terminal symbols (no terminals on LHS)
+            if (!lhs.matches("^[a-zA-Z][a-zA-Z0-9]*$")) {
+                isType2 = false;
+                isType3 = false;
             }
 
-            for (String right : productions.get(left)) {
-                if (!(right.length() == 1 ||
-                        (right.length() > 1 &&
-                                nonTerminals.contains(
-                                        String.valueOf(right.charAt(1)))))) {
-                    isRegular = false;
-                    break;
+            for (String production : rhs) {
+
+                // Type 1: RHS length must be >= LHS length (except epsilon)
+                if (!production.equals("ε") && production.length() < lhs.length()) {
+                    isType1 = false;
+                }
+
+                // Type 3: must be right-linear OR left-linear
+                if (!production.equals("ε") &&
+                        !rightLinear.matcher(production).matches() &&
+                        !leftLinear.matcher(production).matches()) {
+                    isType3 = false;
                 }
             }
         }
 
-        if (isRegular) return "Regular Grammar";
-        return "Cannot determine precisely";
-    }
-
-    public void printProductions() {
-        System.out.println("\nRegular Grammar Productions:");
-
-        List<String> sortedLefts = new ArrayList<>(productions.keySet());
-        Collections.sort(sortedLefts);
-
-        for (String left : sortedLefts) {
-            List<String> rhs = new ArrayList<>(productions.get(left));
-            Collections.sort(rhs);
-
-            System.out.println(left + " -> [" + String.join(", ", rhs) + "]");
+        if (isType3 && isType2) {
+            System.out.println("\nGrammar Type: Type 3 (Regular Grammar)");
+        } else if (isType2) {
+            System.out.println("\nGrammar Type: Type 2 (Context-Free Grammar)");
+        } else if (isType1) {
+            System.out.println("\nGrammar Type: Type 1 (Context-Sensitive Grammar)");
+        } else {
+            System.out.println("\nGrammar Type: Type 0 (Unrestricted Grammar)");
         }
-
-        System.out.println("Classification: " + classifyGrammar());
     }
 }

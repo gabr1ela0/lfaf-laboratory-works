@@ -1,55 +1,53 @@
-// Main.java
-import java.util.*;
-
 public class Main {
 
     public static void main(String[] args) {
 
-        Set<String> states = Set.of("q0", "q1", "q2", "q3", "q4");
-        Set<String> alphabet = Set.of("a", "b");
-        Set<String> finalStates = Set.of("q3");
-        String startState = "q0";
+        FiniteAutomaton fa = new FiniteAutomaton();
 
-        //state -> symbol -> set of next states
-        Map<String, Map<String, Set<String>>> transitions = new HashMap<>();
+        fa.states.add("q0");
+        fa.states.add("q1");
+        fa.states.add("q2");
+        fa.states.add("q3");
+        fa.states.add("q4");
 
-        addTransition(transitions, "q0", "a", "q1");
+        fa.alphabet.add('a');
+        fa.alphabet.add('b');
 
-        addTransition(transitions, "q1", "b", "q2");
-        addTransition(transitions, "q1", "b", "q1"); // NDFA case
+        fa.startState = "q0";
+        fa.finalStates.add("q3");
 
-        addTransition(transitions, "q2", "b", "q0");
-        addTransition(transitions, "q2", "a", "q3");
+        fa.addTransition("q0",'a',"q1");
 
-        addTransition(transitions, "q3", "a", "q4");
-        addTransition(transitions, "q4", "a", "q0");
+        fa.addTransition("q1",'b',"q2");
+        fa.addTransition("q1",'b',"q1");
 
-        // Create FA
-        FiniteAutomaton fa =
-                new FiniteAutomaton(states, alphabet, transitions, startState, finalStates);
+        fa.addTransition("q2",'b',"q0");
+        fa.addTransition("q2",'a',"q3");
 
-        // b) Check determinism
-        System.out.println("Is deterministic: " + fa.isDeterministic());
+        fa.addTransition("q3",'a',"q4");
 
-        // c) Convert NDFA to DFA
+        fa.addTransition("q4",'a',"q0");
+
+        System.out.println("Deterministic: " + fa.isDeterministic());
+
+        System.out.println("\nNDFA -> DFA conversion:");
+
         FiniteAutomaton dfa = fa.convertToDFA();
-        System.out.println("Converted to DFA.");
-        System.out.println("Is deterministic: " + dfa.isDeterministic());
 
-        // a) Convert FA to Regular Grammar (use original NDFA)
+        for (String state : dfa.transitions.keySet()) {
+
+            for (char symbol : dfa.transitions.get(state).keySet()) {
+
+                for (String next : dfa.transitions.get(state).get(symbol)) {
+
+                    System.out.println(state + " -> " + symbol + " " + next);
+                }
+            }
+        }
+
         Grammar grammar = fa.toRegularGrammar();
-        grammar.printProductions();
 
-        // Example string test
-        System.out.println("Test word 'aba': " + dfa.stringBelongsToLanguage("aba"));
-    }
-
-    private static void addTransition(
-            Map<String, Map<String, Set<String>>> transitions,
-            String from, String symbol, String to) {
-
-        transitions.putIfAbsent(from, new HashMap<>());
-        transitions.get(from).putIfAbsent(symbol, new HashSet<>());
-        transitions.get(from).get(symbol).add(to);
+        grammar.printGrammar();
+        grammar.classifyGrammar();
     }
 }
