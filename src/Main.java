@@ -112,18 +112,18 @@ public class Main {
                 char q = src[pos];
                 if (q == '*') {
                     pos++;
-                    log("    quantifier '*' on " + atom + " → repeat 0.." + MAX_REPEAT);
+                    log("    quantifier '*' on " + atom + " -> repeat 0.." + MAX_REPEAT);
                     return RegexNode.repeat(atom, 0, MAX_REPEAT);
                 }
                 if (q == '+') {
                     pos++;
-                    log("    quantifier '+' on " + atom + " → repeat 1.." + MAX_REPEAT);
+                    log("    quantifier '+' on " + atom + " -> repeat 1.." + MAX_REPEAT);
                     return RegexNode.repeat(atom, 1, MAX_REPEAT);
                 }
                 int exact = superscriptValue(q);
                 if (exact > 0) {
                     pos++;
-                    log("    superscript '" + q + "' on " + atom + " → repeat exactly " + exact);
+                    log("    superscript '" + q + "' on " + atom + " -> repeat exactly " + exact);
                     return RegexNode.repeat(atom, exact, exact);
                 }
             }
@@ -136,11 +136,11 @@ public class Main {
             char c = src[pos];
             if (c == '(') {
                 pos++;  // consume '('
-                log("    '(' at pos " + (pos - 1) + " → entering group");
+                log("    '(' at pos " + (pos - 1) + " -> entering group");
                 RegexNode inner = parseExpr();
                 if (pos < src.length && src[pos] == ')') {
                     pos++;  // consume ')'
-                    log("    ')' → closing group");
+                    log("    ')' -> closing group");
                 }
                 return inner;
             }
