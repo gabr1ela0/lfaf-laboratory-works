@@ -5,7 +5,7 @@ import java.util.*;
  *
  * Regexes:
  *   1. (S|T)(U|V)W*Y+24
- *   2. L(M|N)D³P*Q(2|3)      (D³ = exactly 3 D's)
+ *   2. L(M|N)O³P*Q(2|3)      (O³ = exactly 3 O's)
  *   3. R*S(T|U|V)W(X|Y|Z)²   (² = exactly 2 repetitions of one of X/Y/Z)
  *
  * Supported operators:
@@ -208,12 +208,12 @@ public class Main {
         // ² = \u00B2, ³ = \u00B3
         String[] regexes = {
                 "(S|T)(U|V)W*Y+24",
-                "L(M|N)D\u00B3P*Q(2|3)",
+                "L(M|N)O\u00B3P*Q(2|3)",
                 "R*S(T|U|V)W(X|Y|Z)\u00B2"
         };
 
 
-        System.out.println("Variant 4 --- Regular Expression Generator");
+        System.out.println("Variant 4 - Regular Expression Generator");
         System.out.println();
 
         for (int i = 0; i < regexes.length; i++) {

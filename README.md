@@ -97,7 +97,7 @@ RegexNode parseQuantified() {
 The generator walks the AST recursively and builds a string by making random choices
 at each `ALTERNATION` node and picking a random repetition count inside the allowed
 range for each `REPEAT` node. A difficulty here was ensuring that `REPEAT` nodes with
-`minRep == maxRep` (like `D³`) always produce exactly that count without accidentally
+`minRep == maxRep` (like `O³`) always produce exactly that count without accidentally
 calling `nextInt(0)`, which throws an exception. This was solved by checking equality
 before calling the random function.
 ```java
@@ -156,17 +156,17 @@ Regex 1 : (S|T)(U|V)W*Y+24
     SUWWWWWYYYY24
     TVWWWWYYY24
 
-Regex 2 : L(M|N)D³P*Q(2|3)
-    LNDDDPPQ3
-    LNDDDPPPPPQ2
-    LMDDDPPPPQ2
-    LNDDDPQ2
-    LNDDDPPPPPQ3
-    LNDDDPPQ2
-    LMDDDPPQ3
-    LNDDDPPPQ2
-    LMDDDPQ2
-    LMDDDPPPPPQ3
+Regex 2 : L(M|N)O³P*Q(2|3)
+    LNOOOPPQ3
+    LNOOOPPPPPQ2
+    LMOOOPPPPQ2
+    LNOOOPQ2
+    LNOOOPPPPPQ3
+    LNOOOPPQ2
+    LMOOOPPQ3
+    LNOOOPPPQ2
+    LMOOOPQ2
+    LMOOOPPPPPQ3
 
 Regex 3 : R*S(T|U|V)W(X|Y|Z)²
    STWXZ
