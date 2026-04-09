@@ -77,7 +77,7 @@ public class Main {
             this.log = log;
         }
 
-        // Level 1: alternation  ( a | b | c )
+        // Level 1: alternation  ( a | b | c x)
         RegexNode parseExpr() {
             log("parseExpr: looking for alternatives separated by '|'");
             List<RegexNode> alts = new ArrayList<>();
@@ -213,7 +213,7 @@ public class Main {
         };
 
 
-        System.out.println("Variant 4 - Regular Expression Generator");
+        System.out.println("Variant 4");
         System.out.println();
 
         for (int i = 0; i < regexes.length; i++) {
