@@ -77,7 +77,7 @@ public class Main {
             this.log = log;
         }
 
-        // Level 1: alternation  ( a | b | c )
+        // Level 1: alternation  ( a | b | c x)
         RegexNode parseExpr() {
             log("parseExpr: looking for alternatives separated by '|'");
             List<RegexNode> alts = new ArrayList<>();
