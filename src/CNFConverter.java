@@ -17,8 +17,11 @@ public class CNFConverter {
         Grammar s1 = eliminateEpsilonProductions(g);
         System.out.println("STEP 1: Eliminate ε-productions\n" + s1);
 
+        Grammar s2 = eliminateRenamingRules(s1);
+        System.out.println("STEP 2: Eliminate renaming (unit) rules\n" + s2);
 
 
+        return s2;
     }
 
     // STEP 1: Eliminate ε-productions
@@ -76,6 +79,35 @@ public class CNFConverter {
             }
         }
         return result;
+    }
+
+    // STEP 2: Eliminate renaming rules A -> B
+    public Grammar eliminateRenamingRules(Grammar g) {
+        Map<String, List<List<String>>> newProds = new LinkedHashMap<>();
+        for (String nt : g.getNonTerminals()) {
+            Set<List<String>> expanded = new LinkedHashSet<>();
+            for (String reachable : unitClosure(nt, g))
+                for (List<String> rhs : g.getProductions().getOrDefault(reachable, Collections.emptyList()))
+                    if (!(rhs.size() == 1 && g.getNonTerminals().contains(rhs.get(0))))
+                        expanded.add(rhs);
+            if (!expanded.isEmpty()) newProds.put(nt, new ArrayList<>(expanded));
+        }
+        return new Grammar(new LinkedHashSet<>(g.getNonTerminals()),
+                new LinkedHashSet<>(g.getTerminals()), newProds, g.getStartSymbol());
+    }
+
+    private Set<String> unitClosure(String start, Grammar g) {
+        Set<String> visited = new LinkedHashSet<>();
+        Deque<String> queue = new ArrayDeque<>();
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            String cur = queue.poll();
+            if (!visited.add(cur)) continue;
+            for (List<String> rhs : g.getProductions().getOrDefault(cur, Collections.emptyList()))
+                if (rhs.size() == 1 && g.getNonTerminals().contains(rhs.get(0)))
+                    queue.add(rhs.get(0));
+        }
+        return visited;
     }
 
 
