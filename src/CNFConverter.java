@@ -20,8 +20,11 @@ public class CNFConverter {
         Grammar s2 = eliminateRenamingRules(s1);
         System.out.println("STEP 2: Eliminate renaming (unit) rules\n" + s2);
 
+        Grammar s3 = eliminateInaccessibleSymbols(s2);
+        System.out.println("STEP 3: Eliminate inaccessible symbols\n" + s3);
 
-        return s2;
+
+        return s3;
     }
 
     // STEP 1: Eliminate ε-productions
@@ -108,6 +111,26 @@ public class CNFConverter {
                     queue.add(rhs.get(0));
         }
         return visited;
+    }
+
+    // STEP 3: Eliminate inaccessible symbols
+    public Grammar eliminateInaccessibleSymbols(Grammar g) {
+        Set<String> accessible = new LinkedHashSet<>();
+        Deque<String> queue = new ArrayDeque<>();
+        queue.add(g.getStartSymbol());
+        while (!queue.isEmpty()) {
+            String cur = queue.poll();
+            if (!accessible.add(cur)) continue;
+            for (List<String> rhs : g.getProductions().getOrDefault(cur, Collections.emptyList()))
+                for (String sym : rhs)
+                    if (g.getNonTerminals().contains(sym)) queue.add(sym);
+        }
+        Set<String> newNTs = new LinkedHashSet<>(g.getNonTerminals());
+        newNTs.retainAll(accessible);
+        Map<String, List<List<String>>> newProds = new LinkedHashMap<>();
+        for (String nt : newNTs)
+            if (g.getProductions().containsKey(nt)) newProds.put(nt, g.getProductions().get(nt));
+        return new Grammar(newNTs, new LinkedHashSet<>(g.getTerminals()), newProds, g.getStartSymbol());
     }
 
 
