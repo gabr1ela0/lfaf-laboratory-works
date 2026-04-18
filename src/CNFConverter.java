@@ -23,8 +23,11 @@ public class CNFConverter {
         Grammar s3 = eliminateInaccessibleSymbols(s2);
         System.out.println("STEP 3: Eliminate inaccessible symbols\n" + s3);
 
+        Grammar s4 = eliminateNonProductiveSymbols(s3);
+        System.out.println("STEP 4: Eliminate non-productive symbols\n" + s4);
 
-        return s3;
+
+        return s4;
     }
 
     // STEP 1: Eliminate ε-productions
@@ -130,6 +133,31 @@ public class CNFConverter {
         Map<String, List<List<String>>> newProds = new LinkedHashMap<>();
         for (String nt : newNTs)
             if (g.getProductions().containsKey(nt)) newProds.put(nt, g.getProductions().get(nt));
+        return new Grammar(newNTs, new LinkedHashSet<>(g.getTerminals()), newProds, g.getStartSymbol());
+    }
+
+    // STEP 4: Eliminate non-productive symbols
+    public Grammar eliminateNonProductiveSymbols(Grammar g) {
+        Set<String> productive = new HashSet<>(g.getTerminals());
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Map.Entry<String, List<List<String>>> e : g.getProductions().entrySet())
+                if (!productive.contains(e.getKey()))
+                    for (List<String> rhs : e.getValue())
+                        if (rhs.isEmpty() || productive.containsAll(rhs))
+                            if (productive.add(e.getKey())) { changed = true; break; }
+        }
+        Set<String> newNTs = new LinkedHashSet<>(g.getNonTerminals());
+        newNTs.retainAll(productive);
+        Map<String, List<List<String>>> newProds = new LinkedHashMap<>();
+        for (String nt : newNTs) {
+            List<List<String>> filtered = new ArrayList<>();
+            for (List<String> rhs : g.getProductions().getOrDefault(nt, Collections.emptyList()))
+                if (rhs.stream().allMatch(s -> g.getTerminals().contains(s) || productive.contains(s)))
+                    filtered.add(rhs);
+            if (!filtered.isEmpty()) newProds.put(nt, filtered);
+        }
         return new Grammar(newNTs, new LinkedHashSet<>(g.getTerminals()), newProds, g.getStartSymbol());
     }
 
