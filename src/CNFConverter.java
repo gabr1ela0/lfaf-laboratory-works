@@ -26,8 +26,10 @@ public class CNFConverter {
         Grammar s4 = eliminateNonProductiveSymbols(s3);
         System.out.println("STEP 4: Eliminate non-productive symbols\n" + s4);
 
+        Grammar s5 = toProperCNF(s4);
+        System.out.println("STEP 5: Chomsky Normal Form\n" + s5);
 
-        return s4;
+        return s5;
     }
 
     // STEP 1: Eliminate ε-productions
@@ -161,5 +163,90 @@ public class CNFConverter {
         return new Grammar(newNTs, new LinkedHashSet<>(g.getTerminals()), newProds, g.getStartSymbol());
     }
 
+    // STEP 5: Obtain proper CNF (START + TERM + BIN)
+    public Grammar toProperCNF(Grammar g) {
+        Set<String> nts = new LinkedHashSet<>(g.getNonTerminals());
+        Set<String> ts  = new LinkedHashSet<>(g.getTerminals());
+        Map<String, List<List<String>>> prods = deepCopy(g.getProductions());
+        String start = g.getStartSymbol();
+        String newStart = start;
 
+        // START: add S0 only if start appears on any RHS
+        boolean startOnRhs = prods.values().stream()
+                .flatMap(Collection::stream).anyMatch(r -> r.contains(start));
+        if (startOnRhs) {
+            newStart = freshSymbol("S0", nts);
+            nts.add(newStart);
+            // inline S rules directly into S0 (avoid leaving S0->S unit rule)
+            List<List<String>> s0rules = new ArrayList<>(
+                    prods.getOrDefault(start, Collections.emptyList()));
+            prods.put(newStart, s0rules);
+        }
+
+        // TERM: wrap lone terminals in mixed rules
+        Map<String, String> termMap = new LinkedHashMap<>();
+        Map<String, List<List<String>>> termProds = new LinkedHashMap<>(prods);
+        for (String lhs : new ArrayList<>(prods.keySet())) {
+            List<List<String>> newRules = new ArrayList<>();
+            for (List<String> rhs : prods.get(lhs)) {
+                if (rhs.size() <= 1) { newRules.add(rhs); continue; }
+                List<String> newRhs = new ArrayList<>();
+                for (String sym : rhs) {
+                    if (ts.contains(sym)) {
+                        String wrapper = termMap.computeIfAbsent(sym, t -> {
+                            String name = freshSymbol("T_" + t.toUpperCase(), nts);
+                            nts.add(name);
+                            return name;
+                        });
+                        newRhs.add(wrapper);
+                    } else { newRhs.add(sym); }
+                }
+                newRules.add(newRhs);
+            }
+            termProds.put(lhs, newRules);
+        }
+        for (Map.Entry<String, String> e : termMap.entrySet())
+            termProds.put(e.getValue(), Collections.singletonList(Collections.singletonList(e.getKey())));
+        prods = termProds;
+
+        // BIN: binarize rules with > 2 symbols on RHS
+        Map<String, List<List<String>>> binProds = new LinkedHashMap<>();
+        for (String lhs : prods.keySet())
+            for (List<String> rhs : prods.get(lhs))
+                if (rhs.size() <= 2)
+                    binProds.computeIfAbsent(lhs, k -> new ArrayList<>()).add(new ArrayList<>(rhs));
+                else
+                    binarize(lhs, new ArrayList<>(rhs), nts, binProds);
+
+        return new Grammar(nts, ts, binProds, newStart);
+    }
+
+    private void binarize(String lhs, List<String> symbols,
+                          Set<String> nts, Map<String, List<List<String>>> prods) {
+        if (symbols.size() <= 2) {
+            prods.computeIfAbsent(lhs, k -> new ArrayList<>()).add(new ArrayList<>(symbols));
+            return;
+        }
+        String fresh = freshSymbol(lhs + "1", nts);
+        nts.add(fresh);
+        prods.computeIfAbsent(lhs, k -> new ArrayList<>())
+                .add(Arrays.asList(symbols.get(0), fresh));
+        binarize(fresh, symbols.subList(1, symbols.size()), nts, prods);
+    }
+
+    private String freshSymbol(String base, Set<String> existing) {
+        String candidate = base;
+        while (existing.contains(candidate)) candidate = base + (++freshCounter);
+        return candidate;
+    }
+
+    private Map<String, List<List<String>>> deepCopy(Map<String, List<List<String>>> orig) {
+        Map<String, List<List<String>>> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, List<List<String>>> e : orig.entrySet()) {
+            List<List<String>> rhsCopy = new ArrayList<>();
+            for (List<String> rhs : e.getValue()) rhsCopy.add(new ArrayList<>(rhs));
+            copy.put(e.getKey(), rhsCopy);
+        }
+        return copy;
+    }
 }
