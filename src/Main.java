@@ -32,4 +32,39 @@ public class Main {
 
         return new Grammar(vn, vt, p, "S");
     }
+
+    static Grammar buildVariant9() {
+        Set<String> vn = new LinkedHashSet<>(Arrays.asList("S","A","B","C","D"));
+        Set<String> vt = new LinkedHashSet<>(Arrays.asList("a","b"));
+
+        Map<String, List<List<String>>> p = new LinkedHashMap<>();
+
+        p.put("S", Arrays.asList(
+                Arrays.asList("b","A"),
+                Arrays.asList("B","C")
+        ));
+
+        p.put("A", Arrays.asList(
+                Arrays.asList("a"),
+                Arrays.asList("a","S"),
+                Arrays.asList("b","A","a","A","b")
+        ));
+
+        p.put("B", Arrays.asList(
+                Arrays.asList("A"),
+                Arrays.asList("b","S"),
+                Arrays.asList("a","A","a")
+        ));
+
+        p.put("C", Arrays.asList(
+                Collections.emptyList(),        // ε
+                Arrays.asList("A","B")
+        ));
+
+        p.put("D", Arrays.asList(
+                Arrays.asList("A","B")
+        ));
+
+        return new Grammar(vn, vt, p, "S");
+    }
 }
