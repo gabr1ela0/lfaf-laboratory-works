@@ -211,9 +211,12 @@ rule is still not valid CNF.
 binary rules. The recursive approach worked well here: peel off the first symbol, pair
 it with a fresh nonterminal, then recurse on the rest.
 
-An issue that came up during BIN was name collisions - when multiple long rules for
-different nonterminals both try to create intermediate symbols, the names can clash if
-you are not careful. The `freshCounter` was added specifically to handle this.
+The initial implementation created independent intermediate nonterminals for every rule separately.
+For example, S -> a A d A B, A -> a A d A B, and B -> a A d A B all binarize the same suffix [A, d, A, B], 
+but the old code created S1/S11/S111, A1/A11/A111, and B1/B11/B111 as three separate sets of nodes for identical structure. 
+This produced 26 nonterminals in the final grammar. The fix was to introduce a suffix cache, a map from a suffix sequence to 
+the intermediate nonterminal that represents it. When two rules share the same suffix, they reuse the same node instead of 
+creating a duplicate. This brought the final nonterminal count down to 10.
 
 ```java
 private void binarize(String lhs, List<String> symbols,
@@ -335,50 +338,30 @@ P:
   B -> a A d A
 
 STEP 5: Chomsky Normal Form
-V_N = [S, A, B, S0, T_D, T_A, S1, S11, S111, S12, S121, A1, A11, A111, A13, A131, B1, B11, B111, B14, B141, S01, S011, S0111, S015, S0151]
+V_N = [A, B, S0, T_D, T_A, A1, A11, A111, A12, A121]
 V_T = [a, d]
 S   = S0
 P:
-  S -> T_D B
-  S -> d
-  S -> T_D S
-  S -> T_A S1
-  S -> T_A S12
-  S1 -> A S11
-  S11 -> T_D S111
-  S111 -> A B
-  S12 -> A S121
-  S121 -> T_D A
   A -> d
-  A -> T_D S
+  A -> T_D S0
   A -> T_A A1
-  A -> T_A A13
+  A -> T_A A12
   A1 -> A A11
   A11 -> T_D A111
   A111 -> A B
-  A13 -> A A131
-  A131 -> T_D A
+  A12 -> A A121
+  A121 -> T_D A
   B -> a
-  B -> T_A S
+  B -> T_A S0
   B -> d
-  B -> T_D S
-  B -> T_A B1
-  B -> T_A B14
-  B1 -> A B11
-  B11 -> T_D B111
-  B111 -> A B
-  B14 -> A B141
-  B141 -> T_D A
+  B -> T_D S0
+  B -> T_A A1
+  B -> T_A A12
   S0 -> T_D B
   S0 -> d
-  S0 -> T_D S
-  S0 -> T_A S01
-  S0 -> T_A S015
-  S01 -> A S011
-  S011 -> T_D S0111
-  S0111 -> A B
-  S015 -> A S0151
-  S0151 -> T_D A
+  S0 -> T_D S0
+  S0 -> T_A A1
+  S0 -> T_A A12
   T_D -> d
   T_A -> a
 
