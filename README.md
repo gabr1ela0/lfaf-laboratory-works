@@ -337,7 +337,7 @@ P:
   B -> a A d A B
   B -> a A d A
 
-STEP 5: Chomsky Normal Form
+STEP 5: Chomsky Normal Form (IMPROVED)
 V_N = [A, B, S0, T_D, T_A, A1, A11, A111, A12, A121]
 V_T = [a, d]
 S   = S0
@@ -362,6 +362,54 @@ P:
   S0 -> T_D S0
   S0 -> T_A A1
   S0 -> T_A A12
+  T_D -> d
+  T_A -> a
+
+STEP 5: Chomsky Normal Form (BEFORE)
+V_N = [S, A, B, S0, T_D, T_A, S1, S11, S111, S12, S121, A1, A11, A111, A13, A131, B1, B11, B111, B14, B141, S01, S011, S0111, S015, S0151]
+V_T = [a, d]
+S   = S0
+P:
+  S -> T_D B
+  S -> d
+  S -> T_D S
+  S -> T_A S1
+  S -> T_A S12
+  S1 -> A S11
+  S11 -> T_D S111
+  S111 -> A B
+  S12 -> A S121
+  S121 -> T_D A
+  A -> d
+  A -> T_D S
+  A -> T_A A1
+  A -> T_A A13
+  A1 -> A A11
+  A11 -> T_D A111
+  A111 -> A B
+  A13 -> A A131
+  A131 -> T_D A
+  B -> a
+  B -> T_A S
+  B -> d
+  B -> T_D S
+  B -> T_A B1
+  B -> T_A B14
+  B1 -> A B11
+  B11 -> T_D B111
+  B111 -> A B
+  B14 -> A B141
+  B141 -> T_D A
+  S0 -> T_D B
+  S0 -> d
+  S0 -> T_D S
+  S0 -> T_A S01
+  S0 -> T_A S015
+  S01 -> A S011
+  S011 -> T_D S0111
+  S0111 -> A B
+  S015 -> A S0151
+  S0151 -> T_D A
   T_D -> d
   T_A -> a
 
